@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Captioning</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="left-section">
+            <h1>Image Captioning</h1>
+            <img id="uploadedImage" src="https://via.placeholder.com/400" alt="Your image will appear here">
+            <p id="caption">Your caption will appear here</p>
+        </div>
+
+        <div class="right-section">
+            <label id="customFileButton" for="imageInput">Choose an Image</label>
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="uploadBtn">Generate Caption</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('uploadedImage').src = e.target.result;
+                    document.getElementById('caption').textContent = "Image has been uploaded!";
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const input = document.getElementById('imageInput');
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('uploadedImage').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                const base64Image = await toBase64(file);
+
+                const response = await fetch('http://localhost:5000/generate-caption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image.split(',')[1] })
+                });
+
+                const result = await response.json();
+                document.getElementById('caption').textContent = result.generated_caption;
+            }
+        });
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+
+</body>
+</html>
